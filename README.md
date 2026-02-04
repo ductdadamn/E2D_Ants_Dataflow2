@@ -118,7 +118,7 @@ Nếu có thêm thời gian và tài nguyên, nhóm sẽ cải tiến theo các 
 
 ## 8. Tác giả & Giấy phép
 
-- **Đội thi:** [Tên Đội Của Bạn - ví dụ: Data Wizards]
+- **Đội thi:** E2D_Ants
 - **Thành viên:**
     1.  **Hoàng Viết Đức** - *AI Engineer & Algorithm Lead* (Phụ trách mô hình dự báo, tối ưu thuật toán, , Dashboard & API).
     2.  **Lưu Minh Quang** - *System Engineer & Data Analyst* (Phụ trách xử lý dữ liệu, Pipeline, mô hình dự báo).
