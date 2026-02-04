@@ -22,6 +22,9 @@
     - **Feature Engineering:** Tạo các đặc trưng Lag (1, 12, 288 bước), Rolling Statistics (Mean, Std), và tỷ lệ lỗi hệ thống (`ratio_5xx`).
 
 ## 3. Mô hình & Kiến trúc
+- **Cơ sở lựa chọn mô hình (Insights từ EDA):**
+    - Phân tích tại notebook `eda.ipynb` cho thấy tương quan rất mạnh (**Pearson ~0.88**) giữa Requests và Bytes -> Là cơ sở để dùng chiến lược *Chained Prediction* (Dùng Requests dự báo Bytes).
+    - Phát hiện các đợt lỗi 5xx tăng vọt độc lập với Traffic -> Khẳng định sự cần thiết của việc đưa feature `status_5xx` vào mô hình Hybrid.
 - **Kiến trúc tổng thể:**
   `Raw Logs` -> `ETL Pipeline` -> `Feature Store (5m)` -> `Hybrid AI Model` -> `Forecast` -> `Autoscaling Logic` -> `Dashboard`.
 - **Mô hình sử dụng:**
@@ -55,6 +58,7 @@ E2D_Ants_Dataflow2         # Link drive đề thi chưa datasets
 ├── main_pipeline.py       # Script chính để tái tạo kết quả từ A-Z
 ├── app_dashboard.py       # Ứng dụng Demo Streamlit
 ├── api.py                 # Demo API Backend
+├── eda.ipynb              # Notebook Phân tích dữ liệu & Biểu đồ
 ├── auto_scaling.py        # Module xử lý Log
 └── requirements.txt       # Các thư viện cần thiết
 Hướng dẫn chạy
