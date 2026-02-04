@@ -50,17 +50,20 @@
 ## 5. Triển khai & Demo
 
 ### Cấu trúc thư mục
-E2D_Ants_Dataflow2         # Link drive đề thi chưa datasets
-├── data.txt  
+```
+E2D_Ants_Dataflow2
+├── data.txt             # Link drive đề thi chưa datasets
 ├── models/
-│   ├── model_bytes.pkl                  
-│   └── model_requests.pkl            
-├── main_pipeline.py       # Script chính để tái tạo kết quả từ A-Z
-├── app_dashboard.py       # Ứng dụng Demo Streamlit
-├── api.py                 # Demo API Backend
-├── eda.ipynb              # Notebook Phân tích dữ liệu & Biểu đồ
-├── auto_scaling.py        # Module xử lý Log
-└── requirements.txt       # Các thư viện cần thiết
+│   ├── model_bytes.pkl
+│   └── model_requests.pkl
+├── main_pipeline.py     # Script chính để tái tạo kết quả từ A-Z
+├── app_dashboard.py     # Ứng dụng Demo Streamlit
+├── api.py               # Demo API Backend
+├── eda.ipynb            # Notebook Phân tích dữ liệu & Biểu đồ
+├── auto_scaling.py      # Module xử lý Log
+└── requirements.txt     # Các thư viện cần thiết
+```
+
 Hướng dẫn chạy
 Bước 1: Cài đặt môi trường
 
