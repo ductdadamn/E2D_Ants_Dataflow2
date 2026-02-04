@@ -36,23 +36,36 @@
     - Chỉ sử dụng dữ liệu quá khứ (Lag) để dự báo tương lai.
     - Nghiêm cấm sử dụng hàm `train_test_split` ngẫu nhiên.
 
-## 4. Đánh giá
-- **Metrics:**
-    - **RMSE (Root Mean Squared Error):** Đo độ lệch chuẩn của sai số dự báo.
-    - **Overload Minutes:** Số phút nhu cầu thực tế vượt quá khả năng phục vụ.
-    - **Flapping Count:** Số lần server phải bật/tắt liên tục trong thời gian ngắn.
-- **Kết quả:**
-    - **RMSE Requests:** ~10.3 (Trên tập Validation có đầy đủ features).
-    - **Sự cải thiện:** Việc thêm features `status_5xx` và `error_rate` giúp model nhận diện được các đợt tấn công/lỗi, tránh dự báo sai lệch.
-- **Phân tích lỗi & trade-off:**
-    - Chúng tôi chấp nhận **Over-provisioning** (cấp dư server một chút) thông qua hệ số `Safety Margin` để đảm bảo **Zero Downtime** (Không sập hệ thống), chấp nhận chi phí cao hơn một chút nhưng giữ trải nghiệm người dùng tốt nhất.
+## 4. Đánh giá Kết quả (Evaluation)
+
+Chúng tôi thực hiện đánh giá trên tập **Test (23/08/1995 - 31/08/1995)** - giai đoạn hệ thống hoạt động ổn định sau sự cố bão.
+
+- **Kết quả định lượng:**
+    | Metric | Requests Model | Bytes Model | Ghi chú |
+    | :--- | :--- | :--- | :--- |
+    | **RMSE** | **49.52** | **1,270,756** | Sai số chuẩn trên mỗi 5 phút. |
+    | **MAE** | 36.81 | 966,072 | Sai số tuyệt đối trung bình. |
+
+- **Phân tích Hiệu năng (Model Performance Analysis):**
+    - **Giai đoạn có sự cố (Validation):** Trên tập kiểm thử nội bộ (tuần giữa tháng 8), model đạt **RMSE ~10.3** nhờ bắt được tín hiệu từ Feature `status_5xx` (Lỗi server tăng -> Traffic giảm).
+    - **Giai đoạn ổn định (Test):** Trên tập Test (tuần cuối tháng 8), hệ thống rất ít lỗi, do đó model chuyển sang chế độ "Baseline" (dựa vào Lag/Chu kỳ) với RMSE ~49.5.
+    -> *Kết luận:* Mô hình hoạt động linh hoạt: Rất chính xác khi có biến động (Anomaly) và ổn định ở mức chấp nhận được khi vận hành bình thường.
+
+- **Đánh giá Autoscaling:**
+    - Với RMSE ~50 requests/5phút, chúng tôi thiết lập **Safety Margin = 20%** (tương đương buffer khoảng 60-100 requests) để đảm bảo không bao giờ thiếu server, ngay cả khi dự báo lệch.
 
 ## 5. Triển khai & Demo
 
 ### Cấu trúc thư mục
 ```
 E2D_Ants_Dataflow2
-├── data.txt             # Link drive đề thi chưa datasets
+├── data/
+│   ├── predicted data/
+│   │         └── submission_final.csv  
+│   ├── processed data/
+│   │         └── train_per_1m.csv
+│   └── raw data/   
+│           └── raw_data.txt  # Link drive đề thi chưa datasets
 ├── models/
 │   ├── model_bytes.pkl
 │   └── model_requests.pkl

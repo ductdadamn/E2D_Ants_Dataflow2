@@ -73,19 +73,36 @@ df['servers_online'] = servers_final
 df['system_capacity'] = df['servers_online'] * capacity_per_server
 
 # 2. Metrics Tổng quan (Dòng trên cùng)
+# --- TÍNH TOÁN TIẾT KIỆM CHI PHÍ (Cost Savings Analysis) ---
+# a. Chi phí nếu không dùng Autoscaling (Phải thuê max server 24/7)
+max_servers_needed = int(df['servers_online'].max())
+total_intervals = len(df)
+cost_static = max_servers_needed * total_intervals * 0.5 # Giả sử $0.5/block
+
+# b. Chi phí thực tế khi dùng Autoscaling (Của bạn)
+cost_autoscaling = df['servers_online'].sum() * 0.5
+
+# c. Tiết kiệm
+savings = cost_static - cost_autoscaling
+savings_percent = (savings / cost_static) * 100
+
+# --- HIỂN THỊ METRICS (SỬA LẠI ĐOẠN NÀY) ---
 col1, col2, col3, col4 = st.columns(4)
-last_idx = -1 # Lấy thời điểm mới nhất
+last_idx = -1 
+
 with col1:
-    st.metric("Lưu lượng Hiện tại", f"{int(df['requests'].iloc[last_idx])} reqs", delta=f"{int(df['requests'].iloc[last_idx] - df['requests'].iloc[last_idx-1])}")
+    st.metric("Lưu lượng Hiện tại", f"{int(df['requests'].iloc[last_idx])}", delta=f"{int(df['requests'].iloc[last_idx] - df['requests'].iloc[last_idx-1])}")
+
 with col2:
     st.metric("Server Đang chạy", f"{int(df['servers_online'].iloc[last_idx])}", delta_color="off")
-with col3:
-    load_percent = (df['requests'].iloc[last_idx] / df['system_capacity'].iloc[last_idx]) * 100
-    st.metric("Tải hệ thống (%)", f"{load_percent:.1f}%", delta=None)
-with col4:
-    cost = df['servers_online'].sum() * 0.5 # Giả sử $0.5/server/5min
-    st.metric("Ước tính Chi phí", f"${cost:,.0f}")
 
+with col3:
+    # Thay vì hiện tải hệ thống, hãy hiện MAX server cần thiết (để so sánh)
+    st.metric("Peak Server (Tháng)", f"{max_servers_needed} units", help="Số server tối đa phải thuê nếu không có Autoscaling")
+
+with col4:
+    # KHOE TIỀN TIẾT KIỆM ĐƯỢC
+    st.metric("Chi phí Tiết kiệm", f"${savings:,.0f}", delta=f"{savings_percent:.1f}%", help="So với chi phí thuê cố định (Static Provisioning)")
 # 3. Biểu đồ Chính (Request & Scaling)
 st.subheader("📈 Giám sát Tải & Scaling")
 tab1, tab2 = st.tabs(["Requests (CPU Scaling)", "Bytes (Bandwidth Scaling)"])
@@ -106,7 +123,7 @@ with tab1:
         fig.add_trace(go.Scatter(x=overload.index, y=overload['requests'], mode='markers', name='QUÁ TẢI (Crash)', marker=dict(color='red', size=8)))
 
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=0, b=0), legend=dict(orientation="h", y=1.1))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 with tab2:
     st.caption("Dự báo băng thông mạng để tối ưu hóa đường truyền.")
@@ -114,7 +131,7 @@ with tab2:
     fig2.add_trace(go.Scatter(x=df.index, y=df['bytes'], name='Bytes Thực tế', line=dict(color='orange')))
     fig2.add_trace(go.Scatter(x=df.index, y=df['pred_bytes'], name='Dự báo Bytes', line=dict(color='purple', dash='dot')))
     fig2.update_layout(height=350, margin=dict(l=0, r=0, t=0, b=0))
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, width='stretch')
 
 # 4. Phân tích Chi tiết
 c1, c2 = st.columns([1, 2])
@@ -134,4 +151,4 @@ with c1:
 
 with c2:
     st.subheader("📋 Log Hoạt động (Dữ liệu 5 phút cuối)")
-    st.dataframe(df[['requests', 'pred_requests', 'servers_online', 'system_capacity']].tail(5), use_container_width=True)
+    st.dataframe(df[['requests', 'pred_requests', 'servers_online', 'system_capacity']].tail(5), width='stretch')

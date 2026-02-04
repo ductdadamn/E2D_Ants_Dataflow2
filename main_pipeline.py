@@ -81,10 +81,24 @@ def main():
     test_final = full[full.index > split_date].copy()
     test_final = test_final.fillna(method='bfill') # Fix lag đầu chuỗi
 
+    # --- CẤU HÌNH "BALANCED" (CÂN BẰNG & ỔN ĐỊNH) ---
+    params_optimized = {
+        'learning_rate': 0.05,        # Chậm hơn mặc định (0.1) một chút để học kỹ hơn
+        'max_iter': 1000,             # Đủ số lượng cây để học hết quy luật
+        'max_leaf_nodes': 45,         # Phức tạp vừa phải (Mặc định 31)
+        'max_depth': 10,              # Không cho cây mọc quá sâu (tránh học vẹt)
+        'min_samples_leaf': 30,       # Mỗi lá phải có 30 mẫu (tránh bị nhiễu bởi điểm dị biệt)
+        'l2_regularization': 0.5,     # Thêm chút phạt để chống nhiễu
+        'early_stopping': True,
+        'validation_fraction': 0.1,
+        'n_iter_no_change': 50,
+        'random_state': 42
+    }
+
     # B. TRAIN MODEL 1: REQUESTS (requests)
     print("🧠 Training Model 1: Requests...")
     feats_req = ['hour', 'dayofweek', 'lag_requests_1', 'lag_requests_288', 'ratio_5xx', 'is_crash']
-    model_req = HistGradientBoostingRegressor(random_state=42)
+    model_req = HistGradientBoostingRegressor(**params_optimized)
     model_req.fit(train_final[feats_req], np.log1p(train_final['requests']))
     
     # Dự báo Request
@@ -102,7 +116,7 @@ def main():
     X_train_bytes = train_final[feats_bytes].copy()
     X_train_bytes['current_requests'] = train_final['requests'] 
     
-    model_bytes = HistGradientBoostingRegressor(random_state=42)
+    model_bytes = HistGradientBoostingRegressor(**params_optimized)
     model_bytes.fit(X_train_bytes, np.log1p(train_final['bytes']))
     
     # Dự báo Bytes (Dùng 'pred_requests' làm đầu vào thay vì requests thực tế - để tránh leak)
@@ -114,6 +128,27 @@ def main():
 
     # D. XUẤT KẾT QUẢ
     out_cols = ['requests', 'pred_requests', 'bytes', 'pred_bytes']
+
+    from sklearn.metrics import mean_squared_error, mean_absolute_error
+
+    print("\n" + "="*40)
+    print("📊 KẾT QUẢ ĐÁNH GIÁ MÔ HÌNH (TEST SET)")
+    print("="*40)
+
+    # 1. Đánh giá Model Requests
+    rmse_req = np.sqrt(mean_squared_error(test_final['requests'], test_final['pred_requests']))
+    mae_req = mean_absolute_error(test_final['requests'], test_final['pred_requests'])
+    print(f"✅ REQUESTS Model:")
+    print(f"   - RMSE: {rmse_req:,.2f} (Càng thấp càng tốt)")
+    print(f"   - MAE : {mae_req:,.2f}")
+
+    # 2. Đánh giá Model Bytes
+    rmse_bytes = np.sqrt(mean_squared_error(test_final['bytes'], test_final['pred_bytes']))
+    mae_bytes = mean_absolute_error(test_final['bytes'], test_final['pred_bytes'])
+    print(f"✅ BYTES Model:")
+    print(f"   - RMSE: {rmse_bytes:,.0f}")
+    print(f"   - MAE : {mae_bytes:,.0f}")
+    print("="*40 + "\n")
     test_final[out_cols].to_csv("submission_final.csv")
     print("🎉 Xong! File kết quả: submission_final.csv")
     
